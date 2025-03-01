@@ -41,10 +41,26 @@ public class ElectionResultController {
 
     @PostMapping("/compile/{electionId}")
     // @PreAuthorize("hasRole('ADMIN')") // Restrict access to admins
-    public ResponseEntity<Map<String, String>> compileElectionResults(@PathVariable Integer electionId) {
-        electionResultService.compileElectionResults(electionId);
+    public ResponseEntity<List<Map<String, Object>>> compileElectionResults(@PathVariable Integer electionId) {
+        List<ElectionResultDTO> compiledResults = electionResultService.compileElectionResults(electionId);
+
+        List<Map<String, Object>> response = compiledResults.stream().map(result -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("electionId", result.getElectionId());
+            map.put("positionId", result.getPositionId());
+            map.put("votes", result.getVotes());
+            map.put("winner", result.getWinner());
+            return map;
+        }).toList();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/publish/{electionId}")
+    public ResponseEntity<Map<String, String>> publishElectionResults(@PathVariable Integer electionId) {
+        electionResultService.publishElectionResults(electionId);
         Map<String, String> response = new HashMap<>();
-        response.put("message", "Election results compiled successfully for electionId: " + electionId);
+        response.put("message", "Election results published successfully for electionId: " + electionId);
         return ResponseEntity.ok(response);
     }
 }

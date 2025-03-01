@@ -18,8 +18,6 @@ import jakarta.persistence.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigInteger;
 import java.util.*;
 
 @Service
@@ -41,6 +39,8 @@ public class ElectionResultService {
     
     @PersistenceContext
     private EntityManager entityManager;
+
+    private final Map<Integer, List<ElectionResultDTO>> finalCompiledResults = new HashMap<>();
 
     public List<ElectionResultDTO> getElectionResults(Integer electionId) {
         List<Result> results = resultRepository.findByElection_ElectionId(electionId); // Fetch only relevant results
@@ -102,12 +102,11 @@ public class ElectionResultService {
     }
 
     @Transactional
-    public void compileElectionResults(Integer electionId) {
+    public List<ElectionResultDTO> compileElectionResults(Integer electionId) {
         //Check if 'results' table exists
         if (!doesResultsTableExist()) {
             System.out.println("Results table does not exist. Creating...");
             createResultsTable();
-            return;
         }
 
         Election election = electionRepository.findById(electionId)
@@ -117,7 +116,7 @@ public class ElectionResultService {
         List<Result> existingResults = resultRepository.findByElection_ElectionId(electionId);
         if (!existingResults.isEmpty()) {
             System.out.println("Results already exist for election ID: " + electionId);
-            return; // Exit without making changes
+            return Collections.emptyList(); // Exit without making changes
         }
 
         System.out.println("Election :" + election.getTitle());
@@ -127,7 +126,7 @@ public class ElectionResultService {
             throw new RuntimeException("No positions found for election ID: " + electionId);
         }
 
-        List<Result> compiledResults = new ArrayList<>();
+        List<ElectionResultDTO> compiledResults = new ArrayList<>();
 
         System.out.println("Election id is: " + electionId);
         System.out.print("Position array is:");
@@ -140,35 +139,61 @@ public class ElectionResultService {
                 continue;
             }
 
-            // ✅ Store votes per candidate
+            //Store votes per candidate
             Map<Integer, Integer> candidateVotes = new HashMap<>();
             for (Candidate candidate : candidates) {
                 Integer totalVotes = voteRepository.getTotalVotesByCandidateId(candidate.getCandidateId());
                 candidateVotes.put(candidate.getCandidateId(), totalVotes);
             }
 
-            // ✅ Find the winner
+            //Find the winner
             Integer winnerId = Collections.max(candidateVotes.entrySet(), Map.Entry.comparingByValue()).getKey();
-            int maxVotes = candidateVotes.get(winnerId);
+            if (winnerId == null || !candidateVotes.containsKey(winnerId)) {
+                throw new RuntimeException("Winner candidate not found in votes mapping.");
+            }
 
-            // ✅ Create & save result **only once per position**
-            Result finalResult = new Result();
-            finalResult.setElection(election);
-            finalResult.setPosition(position);
+            // Prepare votes list
+            List<Integer[]> votesList = new ArrayList<>();
+            for (Map.Entry<Integer, Integer> entry : candidateVotes.entrySet()) {
+                votesList.add(new Integer[]{entry.getKey(), entry.getValue()});
+            }
 
-            Candidate winner = candidateRepository.findById(winnerId)
-                    .orElseThrow(() -> new RuntimeException("Winner candidate not found"));
-
-            finalResult.setWinner(winner);
-            finalResult.setVotesCount(maxVotes);
-
-            // ✅ Save only once per position
-            resultRepository.save(finalResult);
-            compiledResults.add(finalResult);
+            // Create DTO
+            ElectionResultDTO resultDTO = new ElectionResultDTO(electionId, position.getPositionId(), votesList, winnerId);
+            compiledResults.add(resultDTO);
 
             System.out.println("Added result: Position ID " + position.getPositionId() + " | Winner ID " + winnerId);
         }
-
+        
+        finalCompiledResults.put(electionId, compiledResults);
         System.out.println("Final compiled results: " + compiledResults.size());
+
+        return compiledResults;
+    }
+
+    @Transactional
+    public void publishElectionResults(Integer electionId) {
+        List<ElectionResultDTO> compiledResults = finalCompiledResults.get(electionId);
+        if (compiledResults == null || compiledResults.isEmpty()) {
+            throw new RuntimeException("No compiled results found for election ID: " + electionId);
+        }
+
+        for (ElectionResultDTO resultDTO : compiledResults) {
+            Result result = new Result();
+            result.setElection(electionRepository.findById(electionId).orElseThrow());
+            result.setPosition(positionRepository.findById((Integer) resultDTO.getPositionId()).orElseThrow());
+            result.setWinner(candidateRepository.findById((Integer) resultDTO.getWinner()).orElseThrow());
+
+            List<Integer[]> votesList = (List<Integer[]>) resultDTO.getVotes();
+            int maxVotes = votesList.stream().mapToInt(v -> v[1]).max().orElse(0);
+            result.setVotesCount(maxVotes);
+            
+            resultRepository.save(result);
+            System.out.println("Result is:" + result.getResultId());
+            System.out.println("Saved Result is:" + result.getResultId());
+        }
+
+        // Remove from temporary storage after publishing
+        finalCompiledResults.remove(electionId);
     }
 }
