@@ -57,6 +57,7 @@ public class ElectionResultController {
     }
 
     @PostMapping("/publish/{electionId}")
+    // @PreAuthorize("hasRole('ADMIN')") // Restrict access to admins
     public ResponseEntity<Map<String, String>> publishElectionResults(@PathVariable Integer electionId) {
         electionResultService.publishElectionResults(electionId);
         Map<String, String> response = new HashMap<>();
