@@ -9,5 +9,5 @@ import com.fetchResults.FetchResults.entities.Result;
 
 @Repository
 public interface ResultRepository extends JpaRepository<Result, Integer> {
-    List<Result> findByElectionId(Integer electionId);
+    List<Result> findByElection_ElectionId(Integer electionId);
 }

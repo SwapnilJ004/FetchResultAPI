@@ -40,6 +40,14 @@ public class Candidate {
 	@Column(name = "status")
 	private CandidateStatus status;
 
+	public Candidate(){
+		
+	}
+
+	public Candidate(int candidate_id){
+		this.candidateId = candidate_id;
+	}
+
     public Integer getCandidateId() {
 		return candidateId;
 	}

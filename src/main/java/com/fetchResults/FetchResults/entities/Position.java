@@ -29,6 +29,10 @@ public class Position {
 		return election;
 	}
 
+	public Integer getElectionId() {
+		return election.getElectionId();
+	}
+
 	public void setElection(Election election) {
 		this.election = election;
 	}
@@ -67,5 +71,4 @@ public class Position {
 	
 	@Column(name = "created_at")
 	private LocalDate createdAt;
-
 }

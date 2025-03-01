@@ -6,8 +6,10 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.fetchResults.FetchResults.DTOs.ElectionResultDTO;
@@ -34,6 +36,15 @@ public class ElectionResultController {
             return map;
         }).toList();
 
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/compile/{electionId}")
+    // @PreAuthorize("hasRole('ADMIN')") // Restrict access to admins
+    public ResponseEntity<Map<String, String>> compileElectionResults(@PathVariable Integer electionId) {
+        electionResultService.compileElectionResults(electionId);
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Election results compiled successfully for electionId: " + electionId);
         return ResponseEntity.ok(response);
     }
 }
