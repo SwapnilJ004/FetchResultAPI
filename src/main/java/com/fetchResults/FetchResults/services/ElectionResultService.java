@@ -43,7 +43,7 @@ public class ElectionResultService {
     private final Map<Integer, List<ElectionResultDTO>> finalCompiledResults = new HashMap<>();
 
     public List<ElectionResultDTO> getElectionResults(Integer electionId) {
-        List<Result> results = resultRepository.findByElection_ElectionId(electionId); // Fetch only relevant results
+        List<Result> results = resultRepository.findByElection_ElectionId(electionId);
         Map<Integer, List<Result>> groupedResults = new HashMap<>();
 
         for (Result result : results) {
@@ -184,7 +184,7 @@ public class ElectionResultService {
             result.setPosition(positionRepository.findById((Integer) resultDTO.getPositionId()).orElseThrow());
             result.setWinner(candidateRepository.findById((Integer) resultDTO.getWinner()).orElseThrow());
 
-            List<Integer[]> votesList = (List<Integer[]>) resultDTO.getVotes();
+            List<Integer[]> votesList = resultDTO.getVotes_Integers();
             int maxVotes = votesList.stream().mapToInt(v -> v[1]).max().orElse(0);
             result.setVotesCount(maxVotes);
             

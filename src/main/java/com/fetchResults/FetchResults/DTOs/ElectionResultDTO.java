@@ -27,6 +27,10 @@ public class ElectionResultDTO {
         return votes;
     }
 
+    public List<Integer[]> getVotes_Integers() {
+        return votes;
+    }
+
     public Object getWinner() {
         return winner;
     }

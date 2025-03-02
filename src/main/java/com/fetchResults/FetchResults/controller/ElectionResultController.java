@@ -7,16 +7,17 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.fetchResults.FetchResults.DTOs.ElectionResultDTO;
-
 import com.fetchResults.FetchResults.services.ElectionResultService;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/results")
 public class ElectionResultController {
     @Autowired
@@ -31,7 +32,7 @@ public class ElectionResultController {
             Map<String, Object> map = new HashMap<>();
             map.put("electionId", result.getElectionId());
             map.put("positionId", result.getPositionId());
-            map.put("votes", result.getVotes()); // List of [candidateId, votesCount]
+            map.put("votes", result.getVotes_Integers()); // List of [candidateId, votesCount]
             map.put("winner", result.getWinner());
             return map;
         }).toList();
@@ -65,4 +66,3 @@ public class ElectionResultController {
         return ResponseEntity.ok(response);
     }
 }
-

@@ -40,6 +40,13 @@ public class Candidate {
 	@Column(name = "status")
 	private CandidateStatus status;
 
+	@Column(name="campaign_statement")
+    private String campaignStatement;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name="position_id", referencedColumnName = "position_id", nullable = false)
+    private Position position;
+
 	public Candidate(){
 		
 	}
@@ -103,11 +110,4 @@ public class Candidate {
 	public void setPosition(Position position) {
 		this.position = position;
 	}
-
-	@Column(name="campaign_statement")
-    private String campaignStatement;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name="position_id", referencedColumnName = "position_id", nullable = false)
-    private Position position;
 }
