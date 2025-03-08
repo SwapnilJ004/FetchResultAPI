@@ -7,5 +7,5 @@ import com.fetchResults.FetchResults.entities.Election;
 
 @Repository
 public interface ElectionRepository extends JpaRepository<Election, Integer> {
-
+    Election findByElectionId(Integer electionId);
 }

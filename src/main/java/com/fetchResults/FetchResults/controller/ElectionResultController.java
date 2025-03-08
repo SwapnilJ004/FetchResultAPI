@@ -31,9 +31,11 @@ public class ElectionResultController {
         List<Map<String, Object>> response = results.stream().map(result -> {
             Map<String, Object> map = new HashMap<>();
             map.put("electionId", result.getElectionId());
+            map.put("electionName", result.getElectionName());
             map.put("positionId", result.getPositionId());
+            map.put("positionName", result.getPositionName());
             map.put("votes", result.getVotes_Integers()); // List of [candidateId, votesCount]
-            map.put("winner", result.getWinner());
+            map.put("winnerId", result.getWinner());
             return map;
         }).toList();
 
@@ -48,8 +50,10 @@ public class ElectionResultController {
         List<Map<String, Object>> response = compiledResults.stream().map(result -> {
             Map<String, Object> map = new HashMap<>();
             map.put("electionId", result.getElectionId());
+            map.put("electionName", result.getElectionName());
             map.put("positionId", result.getPositionId());
-            map.put("votes", result.getVotes());
+            map.put("positionName", result.getPositionName());
+            map.put("votes", result.getVotes_Integers()); // List of [candidateId, votesCount]
             map.put("winner", result.getWinner());
             return map;
         }).toList();
