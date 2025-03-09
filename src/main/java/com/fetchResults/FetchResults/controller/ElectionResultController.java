@@ -35,7 +35,8 @@ public class ElectionResultController {
             map.put("positionId", result.getPositionId());
             map.put("positionName", result.getPositionName());
             map.put("votes", result.getVotes_Integers()); // List of [candidateId, votesCount]
-            map.put("winnerId", result.getWinner());
+            map.put("winnerId", result.getWinnerId());
+            map.put("winnerName", result.getWinnerName());
             return map;
         }).toList();
 
@@ -54,7 +55,8 @@ public class ElectionResultController {
             map.put("positionId", result.getPositionId());
             map.put("positionName", result.getPositionName());
             map.put("votes", result.getVotes_Integers()); // List of [candidateId, votesCount]
-            map.put("winner", result.getWinner());
+            map.put("winnerId", result.getWinnerId());
+            map.put("winnerName", result.getWinnerName());
             return map;
         }).toList();
 

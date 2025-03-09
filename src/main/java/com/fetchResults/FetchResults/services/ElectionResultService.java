@@ -75,23 +75,31 @@ public class ElectionResultService {
         for (var positionEntry : groupedResults.entrySet()) {
             Integer positionId = positionEntry.getKey();
             List<Result> votes = positionEntry.getValue();
-            
-            // Find the candidate with max votes
+
             Result winner = votes.stream()
                 .max(Comparator.comparingInt(Result::getVotesCount))
                 .orElse(null);
 
             Integer winnerId = (winner != null) ? winner.getWinner().getCandidateId() : null;
-            String electionName = votes.get(0).getElection().getTitle(); // Get election name
-            String positionName = votes.get(0).getPosition().getName(); // Get position name
+            String winnerName = (winner != null) ? winner.getWinner().getUser().getFullName() : "N/A";
 
-            // Prepare votes list for DTO
-            List<Integer[]> votesList = new ArrayList<>();
+            List<Object[]> votesList = new ArrayList<>();
             for (Result r : votes) {
-                votesList.add(new Integer[]{r.getWinner().getCandidateId(), r.getVotesCount()});
+                votesList.add(new Object[]{r.getWinner().getCandidateId(), r.getWinner().getUser().getFullName(), r.getVotesCount()});
             }
 
-            finalResults.add(new ElectionResultDTO(electionId, electionName, positionId, positionName, votesList, winnerId));
+            Election election = winner != null ? winner.getElection() : electionRepository.findById(electionId).orElse(null);
+            Position position = winner != null ? winner.getPosition() : positionRepository.findById(positionId).orElse(null);
+
+            finalResults.add(new ElectionResultDTO(
+                electionId, 
+                (election != null) ? election.getTitle() : "Unknown Election",
+                positionId, 
+                (position != null) ? position.getName() : "Unknown Position",
+                votesList,
+                winnerId, 
+                winnerName
+            ));
         }
 
         return finalResults;
@@ -132,20 +140,26 @@ public class ElectionResultService {
             // Find the winner
             Integer winnerId = Collections.max(candidateVotes.entrySet(), Map.Entry.comparingByValue()).getKey();
 
+            Candidate winner = candidateRepository.findById(winnerId)
+                    .orElseThrow(() -> new RuntimeException("Winner candidate not found"));
+
             // Prepare votes list
-            List<Integer[]> votesList = new ArrayList<>();
+            List<Object[]> votesList = new ArrayList<>();
             for (Map.Entry<Integer, Integer> entry : candidateVotes.entrySet()) {
-                votesList.add(new Integer[]{entry.getKey(), entry.getValue()});
+                Candidate c = candidateRepository.findById(entry.getKey()).orElse(null);
+                String candidateName = (c != null) ? c.getUser().getFullName() : "Unknown";
+                votesList.add(new Object[]{entry.getKey(), candidateName, entry.getValue()});
             }
 
             // Create DTO with election and position names
             ElectionResultDTO resultDTO = new ElectionResultDTO(
-                    electionId, 
-                    election.getTitle(), 
-                    position.getPositionId(), 
-                    position.getName(), 
-                    votesList, 
-                    winnerId
+                electionId, 
+                election.getTitle(), 
+                position.getPositionId(), 
+                position.getName(), 
+                votesList, 
+                winnerId, 
+                winner.getUser().getFullName()
             );
             compiledResults.add(resultDTO);
         }
@@ -165,10 +179,10 @@ public class ElectionResultService {
             Result result = new Result();
             result.setElection(electionRepository.findById(electionId).orElseThrow());
             result.setPosition(positionRepository.findById((Integer)resultDTO.getPositionId()).orElseThrow());
-            result.setWinner(candidateRepository.findById((Integer)resultDTO.getWinner()).orElseThrow());
+            result.setWinner(candidateRepository.findById((Integer)resultDTO.getWinnerId()).orElseThrow());
+
 
             // Convert vote list correctly
-            @SuppressWarnings("unchecked")
             List<Integer[]> votesList = (List<Integer[]>) resultDTO.getVotes();
             int maxVotes = votesList.stream().mapToInt(v -> v[1]).max().orElse(0);
             result.setVotesCount(maxVotes);
