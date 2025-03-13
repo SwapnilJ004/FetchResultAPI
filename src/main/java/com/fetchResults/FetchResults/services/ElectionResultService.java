@@ -9,8 +9,10 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
 
@@ -40,8 +42,7 @@ public class ElectionResultService {
         String sql = "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'results'";
         Query query = entityManager.createNativeQuery(sql);
         Long count = (Long) query.getSingleResult();
-        return count > 0;
-        
+        return count > 0;   
     }
 
     private void createResultsTable() {
@@ -165,6 +166,9 @@ public class ElectionResultService {
         }
 
         finalCompiledResults.put(electionId, compiledResults);
+
+        System.out.println(finalCompiledResults);
+
         return compiledResults;
     }
 
@@ -173,6 +177,12 @@ public class ElectionResultService {
         List<ElectionResultDTO> compiledResults = finalCompiledResults.get(electionId);
         if (compiledResults == null || compiledResults.isEmpty()) {
             throw new RuntimeException("No compiled results found for election ID: " + electionId);
+        }
+
+        // Check if results already exist
+        List<Result> existingResult = resultRepository.findByElection_ElectionId(electionId);
+        if (!existingResult.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Results already declared for this election");
         }
 
         for (ElectionResultDTO resultDTO : compiledResults) {
